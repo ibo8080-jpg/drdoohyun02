@@ -1,0 +1,11 @@
+# 사이트 파일만 배포: 나머지는 모두 제외
+/*
+!/.gitignore
+!/vercel.json
+!/main.html
+!/ailifemaker_logo.png
+!/main.jpeg
+!/강의장면1.jpeg
+!/강의장면2.jpeg
+!/김부장 사진.png
+!/동영상.mp4
