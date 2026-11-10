@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>수강 신청 관리자</title>
+<link rel="icon" href="ailifemaker_logo.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--navy:#1A2238;--bronze:#A67C52;--gold:#F2B63C;--red:#D94E34;--red-d:#B93D26;--g50:#F8F9FA;--g200:#E6E8EB;--g400:#A4A9B3;--g600:#5B6272;--text:#2B3144}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif;font-size:16px;line-height:1.6;color:var(--text);background:var(--g50);word-break:keep-all}
+button,input,select{font-family:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.hide{display:none!important}
+.field{width:100%;height:48px;padding:0 12px;border:2px solid var(--g400);border-radius:4px;font-size:16px;background:#fff;color:var(--text)}
+.btn{min-height:48px;padding:0 18px;border:2px solid var(--navy);border-radius:4px;background:#fff;color:var(--navy);font-weight:700;font-size:16px;cursor:pointer}
+.btn.dark{background:var(--navy);color:#fff}
+.btn:disabled{opacity:.6;cursor:wait}
+.err{font-size:15px;color:var(--red-d);font-weight:600;min-height:22px}
+
+/* 로그인 */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--navy)}
+.login{width:100%;max-width:400px;background:#fff;border-radius:8px;padding:32px;display:flex;flex-direction:column;gap:14px}
+.login label{font-weight:700;color:var(--navy)}
+.brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700;color:var(--navy)}
+.brand img{width:40px;height:40px;border-radius:6px}
+
+/* 관리 화면 */
+.adm{max-width:1400px;margin:0 auto;padding:20px}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:20px}
+.top h1{margin:0;font-size:24px;color:var(--navy)}
+.top .who{font-size:14px;color:var(--g600)}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px;margin-bottom:20px}
+.stat{background:#fff;border:1px solid var(--g200);border-radius:8px;padding:18px}
+.stat small{display:block;font-size:15px;color:var(--g600)}
+.stat strong{font-size:36px;font-weight:800;color:var(--navy)}
+.bar{margin-bottom:4px;font-size:13px;line-height:1.4}
+.bar div.t{display:flex;justify-content:space-between;gap:8px}
+.bar div.b{height:6px;background:var(--g200);border-radius:3px}
+.bar div.b i{display:block;height:6px;background:var(--bronze);border-radius:3px}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:10px;margin-bottom:16px}
+.ahead{display:none}
+.arow{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;padding:16px;background:#fff;border:1px solid var(--g200);border-radius:8px;margin-bottom:12px;font-size:15px;line-height:1.5;word-break:break-all}
+.arow .lb{display:block;font-size:13px;color:var(--g600);font-weight:600}
+.arow .field{height:44px;font-size:15px;padding:0 8px}
+.arow .span2{grid-column:span 2}
+.del{min-height:44px;min-width:44px;border:2px solid var(--red);border-radius:4px;background:#fff;color:var(--red-d);font-weight:700;font-size:14px;cursor:pointer}
+.empty{text-align:center;padding:60px 20px;background:#fff;border:1px dashed var(--g400);border-radius:8px;color:var(--g600);font-size:18px}
+.note{margin-top:18px;font-size:13px;color:var(--g600)}
+@media(min-width:1100px){
+  .ahead{display:grid;padding:10px 8px;font-size:14px;font-weight:700;color:var(--g600);border-bottom:2px solid var(--navy)}
+  .ahead,.arow{grid-template-columns:130px 80px 130px 170px 130px minmax(110px,1fr) 110px minmax(130px,1fr) 52px;gap:12px;align-items:start}
+  .arow{border-radius:0;border-width:0 0 1px 0;margin:0;padding:12px 8px}
+  .arow .lb{display:none}
+  .arow .span2{grid-column:auto}
+}
+</style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div id="loginView" class="login-wrap hide">
+  <form class="login" id="loginForm">
+    <div class="brand"><img src="ailifemaker_logo.png" alt="">신청 관리자</div>
+    <label for="em">이메일</label>
+    <input class="field" id="em" type="email" autocomplete="username" required>
+    <label for="pw">비밀번호</label>
+    <input class="field" id="pw" type="password" autocomplete="current-password" required>
+    <div class="err" id="loginErr" role="alert"></div>
+    <button class="btn dark" type="submit" id="loginBtn" style="min-height:54px;font-size:18px">로그인</button>
+  </form>
+</div>
+
+<!-- 관리 화면 -->
+<div id="adminView" class="adm hide">
+  <div class="top">
+    <div>
+      <div class="brand"><img src="ailifemaker_logo.png" alt=""><h1>수강 신청 관리</h1></div>
+      <div class="who" id="who"></div>
+    </div>
+    <div class="btns">
+      <button class="btn" id="reloadBtn">새로고침</button>
+      <button class="btn" id="maskBtn">개인정보 보이기</button>
+      <button class="btn dark" id="csvBtn">CSV 다운로드</button>
+      <button class="btn" id="outBtn" style="border-color:var(--g400);color:var(--text)">로그아웃</button>
+    </div>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="filters">
+    <input class="field" id="q" type="search" placeholder="이름·연락처 검색" aria-label="이름·연락처 검색">
+    <select class="field" id="fInt" aria-label="관심분야 필터"></select>
+    <select class="field" id="fSt" aria-label="상태 필터"></select>
+    <select class="field" id="sort" aria-label="정렬"><option value="new">최신순</option><option value="old">오래된순</option></select>
+  </div>
+  <div class="ahead"><span>접수일시</span><span>이름</span><span>연락처</span><span>이메일</span><span>관심분야</span><span>상담 내용</span><span>처리상태</span><span>관리 메모</span><span>관리</span></div>
+  <div id="rows"></div>
+  <div class="note">이 화면은 관리자 로그인 후에만 보입니다. 신청자 정보는 외부에 공유하지 마세요.</div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var SUPABASE_URL = 'https://mkrafihaetifziwtuegn.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_G3KCqNblTJwANNty36ImWA_FwasDoLu';
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var STATUS = ['신규', '상담중', '등록완료'];
+  var $ = function (s) { return document.querySelector(s); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmtPhone(d) { d = d || ''; return d.length === 11 ? d.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3') : d.length === 10 ? d.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3') : d; }
+  function maskPhone(d) { d = d || ''; return d.length >= 10 ? d.slice(0, 3) + '-****-' + d.slice(-4) : '***-****'; }
+  function maskEmail(e) { if (!e) return '-'; var i = e.indexOf('@'); return i < 1 ? '***' : e[0] + '***' + e.slice(i); }
+
+  var st = { all: [], q: '', fInt: '전체', fSt: '전체', sort: 'new', mask: true };
+
+  function show(view) { $('#loginView').classList.toggle('hide', view !== 'login'); $('#adminView').classList.toggle('hide', view !== 'admin'); }
+
+  // ── 로그인 ──
+  $('#loginForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = $('#loginBtn'); btn.disabled = true; $('#loginErr').textContent = '';
+    sb.auth.signInWithPassword({ email: $('#em').value.trim(), password: $('#pw').value }).then(function (r) {
+      btn.disabled = false;
+      if (r.error) { $('#loginErr').textContent = '이메일 또는 비밀번호가 올바르지 않습니다.'; return; }
+      $('#pw').value = ''; start();
+    });
+  });
+  $('#outBtn').addEventListener('click', function () { sb.auth.signOut().then(function () { st.all = []; show('login'); }); });
+
+  // ── 데이터 불러오기 ──
+  function load() {
+    return sb.from('registrations').select('*').order('created_at', { ascending: false }).then(function (r) {
+      if (r.error) { $('#rows').innerHTML = '<div class="empty">신청 목록을 불러오지 못했습니다. 관리자로 등록된 이메일인지 확인해 주세요.</div>'; st.all = []; render(true); return; }
+      st.all = r.data || []; render();
+    });
+  }
+  function start() {
+    sb.auth.getUser().then(function (r) {
+      if (!r.data || !r.data.user) { show('login'); return; }
+      $('#who').textContent = '로그인: ' + r.data.user.email;
+      show('admin'); load();
+    });
+  }
+
+  // ── 화면 그리기 ──
+  function opts(list, cur) { return list.map(function (o) { var v = Array.isArray(o) ? o[0] : o, l = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(l) + '</option>'; }).join(''); }
+  function fillFilters() {
+    var ints = []; st.all.forEach(function (a) { if (a.interest && ints.indexOf(a.interest) < 0) ints.push(a.interest); });
+    $('#fInt').innerHTML = opts([['전체', '관심분야: 전체']].concat(ints), st.fInt);
+    $('#fSt').innerHTML = opts([['전체', '상태: 전체']].concat(STATUS), st.fSt);
+  }
+  function render(failed) {
+    fillFilters();
+    var all = st.all, today = new Date().toDateString();
+    var counts = {}; all.forEach(function (a) { var k = a.interest || '(선택 안 함)'; counts[k] = (counts[k] || 0) + 1; });
+    var bars = Object.keys(counts).map(function (k) { var pct = Math.round(counts[k] * 100 / all.length); return '<div class="bar"><div class="t"><span>' + esc(k) + '</span><b>' + pct + '%</b></div><div class="b"><i style="width:' + pct + '%"></i></div></div>'; }).join('') || '<div style="font-size:15px;color:var(--g600)">데이터 없음</div>';
+    $('#stats').innerHTML =
+      '<div class="stat"><small>전체 신청 수</small><strong>' + all.length + '</strong></div>' +
+      '<div class="stat"><small>오늘 신청 수</small><strong>' + all.filter(function (a) { return new Date(a.created_at).toDateString() === today; }).length + '</strong></div>' +
+      '<div class="stat"><small style="margin-bottom:6px">관심분야별 비율</small>' + bars + '</div>' +
+      '<div class="stat"><small>미처리(신규) 건수</small><strong style="color:var(--red)">' + all.filter(function (a) { return a.status === '신규'; }).length + '</strong></div>';
+
+    var qt = st.q.trim().toLowerCase(), qd = st.q.replace(/\D/g, '');
+    var list = all.filter(function (a) {
+      return (st.fInt === '전체' || a.interest === st.fInt) && (st.fSt === '전체' || a.status === st.fSt) &&
+        (!qt || (a.name || '').toLowerCase().indexOf(qt) > -1 || (qd && (a.phone || '').indexOf(qd) > -1));
+    });
+    list.sort(function (a, b) { return st.sort === 'new' ? b.created_at.localeCompare(a.created_at) : a.created_at.localeCompare(b.created_at); });
+    if (failed) return;
+    $('#rows').innerHTML = list.length ? list.map(function (a) {
+      var dt = new Date(a.created_at).toLocaleString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+      return '<div class="arow" data-id="' + a.id + '">' +
+        '<div><span class="lb">접수일시</span>' + esc(dt) + '</div>' +
+        '<div><span class="lb">이름</span><b>' + esc(a.name) + '</b></div>' +
+        '<div><span class="lb">연락처</span>' + esc(st.mask ? maskPhone(a.phone) : fmtPhone(a.phone)) + '</div>' +
+        '<div><span class="lb">이메일</span>' + esc(st.mask ? maskEmail(a.email) : (a.email || '-')) + '</div>' +
+        '<div><span class="lb">관심분야</span>' + esc(a.interest || '-') + '</div>' +
+        '<div class="span2"><span class="lb">상담 내용</span>' + esc(a.message || '-') + '</div>' +
+        '<div><span class="lb">처리상태</span><select class="field" data-act="status" aria-label="처리상태">' + opts(STATUS, a.status) + '</select></div>' +
+        '<div><span class="lb">관리 메모</span><input class="field" data-act="memo" type="text" aria-label="관리 메모" placeholder="메모 (자동 저장)" value="' + esc(a.memo || '') + '"></div>' +
+        '<div><button class="del" data-act="del" aria-label="삭제">삭제</button></div></div>';
+    }).join('') : '<div class="empty">' + (all.length ? '조건에 맞는 신청이 없습니다.' : '아직 접수된 신청이 없습니다. 홈페이지에서 신청이 들어오면 여기에 표시됩니다.') + '</div>';
+    $('#maskBtn').textContent = '개인정보 ' + (st.mask ? '보이기' : '가리기');
+  }
+
+  // ── 조작 ──
+  function find(id) { return st.all.filter(function (a) { return String(a.id) === String(id); })[0]; }
+  $('#rows').addEventListener('change', function (e) {
+    var row = e.target.closest('.arow'); if (!row) return;
+    var id = row.getAttribute('data-id'), a = find(id), act = e.target.getAttribute('data-act');
+    var patch = act === 'status' ? { status: e.target.value } : act === 'memo' ? { memo: e.target.value } : null;
+    if (!patch) return;
+    sb.from('registrations').update(patch).eq('id', id).then(function (r) {
+      if (r.error) { alert('저장하지 못했습니다. 다시 시도해 주세요.'); load(); return; }
+      Object.assign(a, patch); if (act === 'status') render();
+    });
+  });
+  $('#rows').addEventListener('click', function (e) {
+    if (e.target.getAttribute('data-act') !== 'del') return;
+    var row = e.target.closest('.arow'), id = row.getAttribute('data-id'), a = find(id);
+    if (!confirm(a.name + ' 님의 신청을 삭제하시겠습니까? 되돌릴 수 없습니다.')) return;
+    sb.from('registrations').delete().eq('id', id).then(function (r) {
+      if (r.error) { alert('삭제하지 못했습니다. 다시 시도해 주세요.'); return; }
+      st.all = st.all.filter(function (x) { return String(x.id) !== String(id); }); render();
+    });
+  });
+  $('#q').addEventListener('input', function (e) { st.q = e.target.value; render(); });
+  $('#fInt').addEventListener('change', function (e) { st.fInt = e.target.value; render(); });
+  $('#fSt').addEventListener('change', function (e) { st.fSt = e.target.value; render(); });
+  $('#sort').addEventListener('change', function (e) { st.sort = e.target.value; render(); });
+  $('#maskBtn').addEventListener('click', function () { st.mask = !st.mask; render(); });
+  $('#reloadBtn').addEventListener('click', load);
+  $('#csvBtn').addEventListener('click', function () {
+    var q = function (v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; };
+    var rows = [['접수일시', '이름', '연락처', '이메일', '관심분야', '상담 내용', '처리상태', '관리 메모']].concat(st.all.map(function (a) { return [new Date(a.created_at).toLocaleString('ko-KR'), a.name, fmtPhone(a.phone), a.email, a.interest, a.message, a.status, a.memo]; }));
+    var blob = new Blob(['﻿' + rows.map(function (r) { return r.map(q).join(','); }).join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    var u = URL.createObjectURL(blob), l = document.createElement('a');
+    l.href = u; l.download = 'registrations_' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(l); l.click(); l.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 500);
+  });
+
+  start();
+})();
+</script>
+</body>
+</html>

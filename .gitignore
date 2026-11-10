@@ -3,9 +3,12 @@
 !/.gitignore
 !/vercel.json
 !/main.html
+!/admin.html
 !/ailifemaker_logo.png
 !/main.jpeg
 !/강의장면1.jpeg
 !/강의장면2.jpeg
 !/김부장 사진.png
 !/동영상.mp4
+
+.vercel
